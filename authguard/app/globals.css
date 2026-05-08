@@ -1,0 +1,99 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background: #0a0a14;
+  --foreground: #ffffff;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Button & input effects ─────────────────────────────────────────────────── */
+.glow-btn:hover {
+  box-shadow: 0 0 28px rgba(139, 92, 246, 0.55);
+}
+
+.input-field:focus {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+/* ── Background blobs ───────────────────────────────────────────────────────── */
+.blob1 {
+  position: absolute; top: -80px; left: -80px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(109,40,217,0.4) 0%, transparent 70%);
+  border-radius: 50%; filter: blur(40px); pointer-events: none;
+}
+.blob2 {
+  position: absolute; bottom: -60px; right: -60px;
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%);
+  border-radius: 50%; filter: blur(40px); pointer-events: none;
+}
+.blob3 {
+  position: absolute; top: 40%; left: 40%;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(167,139,250,0.15) 0%, transparent 70%);
+  border-radius: 50%; filter: blur(30px); pointer-events: none;
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes spin-slow-rev {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.75; }
+  50%       { opacity: 1; }
+}
+@keyframes orbit-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Animation classes ──────────────────────────────────────────────────────── */
+.animate-float        { animation: float 3.5s ease-in-out infinite; }
+.animate-spin-slow    { animation: spin-slow 22s linear infinite; }
+.animate-spin-slow-rev{ animation: spin-slow-rev 16s linear infinite; }
+.animate-glow-pulse   { animation: glow-pulse 3s ease-in-out infinite; }
+
+/* ── Orbiting dots ──────────────────────────────────────────────────────────── */
+.orbit-track {
+  position: absolute; inset: 0;
+  border-radius: 50%; pointer-events: none;
+}
+.orbit-track-1 { animation: orbit-spin 6s linear infinite; }
+.orbit-track-2 { animation: orbit-spin 10s linear infinite reverse; }
+.orbit-track-3 { animation: orbit-spin 17s linear infinite; }
+
+.orbit-dot { position: absolute; border-radius: 50%; }
+.orbit-dot-1 {
+  top: -5px; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px;
+  background: #a78bfa;
+  box-shadow: 0 0 10px rgba(167,139,250,0.8);
+}
+.orbit-dot-2 {
+  bottom: 8px; right: 8px;
+  width: 7px; height: 7px;
+  background: #7c3aed;
+  box-shadow: 0 0 7px rgba(124,58,237,0.7);
+}
+.orbit-dot-3 {
+  top: 50%; left: -4px; transform: translateY(-50%);
+  width: 5px; height: 5px;
+  background: #c4b5fd;
+  box-shadow: 0 0 5px rgba(196,181,253,0.6);
+}
