@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   firstName:     { type: String, trim: true },
@@ -7,11 +7,11 @@ const userSchema = new mongoose.Schema({
   username:      { type: String, required: true, unique: true, trim: true },
   password:      { type: String, required: true },
   loginAttempts: { type: Number, default: 0 },
-  lockUntil:     { type: Date }
+  lockUntil:     { type: Date },
 }, { timestamps: true });
 
 userSchema.virtual('isLocked').get(function () {
   return this.lockUntil && this.lockUntil > Date.now();
 });
 
-export default mongoose.models.User || mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema);

@@ -1,27 +1,26 @@
-@import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 :root {
   --background: #0a0a14;
   --foreground: #ffffff;
 }
 
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
 }
 
-/* ── Button & input effects ─────────────────────────────────────────────────── */
+/* ── Button & input effects ─────────────────────────────── */
 .glow-btn:hover {
   box-shadow: 0 0 28px rgba(139, 92, 246, 0.55);
 }
-
 .input-field:focus {
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
-/* ── Background blobs ───────────────────────────────────────────────────────── */
+/* ── Background blobs ───────────────────────────────────── */
 .blob1 {
   position: absolute; top: -80px; left: -80px;
   width: 400px; height: 400px;
@@ -41,7 +40,7 @@ body {
   border-radius: 50%; filter: blur(30px); pointer-events: none;
 }
 
-/* ── Keyframes ──────────────────────────────────────────────────────────────── */
+/* ── Keyframes ──────────────────────────────────────────── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-12px); }
@@ -63,13 +62,13 @@ body {
   to   { transform: rotate(360deg); }
 }
 
-/* ── Animation classes ──────────────────────────────────────────────────────── */
-.animate-float        { animation: float 3.5s ease-in-out infinite; }
-.animate-spin-slow    { animation: spin-slow 22s linear infinite; }
-.animate-spin-slow-rev{ animation: spin-slow-rev 16s linear infinite; }
-.animate-glow-pulse   { animation: glow-pulse 3s ease-in-out infinite; }
+/* ── Animation classes ──────────────────────────────────── */
+.animate-float         { animation: float 3.5s ease-in-out infinite; }
+.animate-spin-slow     { animation: spin-slow 22s linear infinite; }
+.animate-spin-slow-rev { animation: spin-slow-rev 16s linear infinite; }
+.animate-glow-pulse    { animation: glow-pulse 3s ease-in-out infinite; }
 
-/* ── Orbiting dots ──────────────────────────────────────────────────────────── */
+/* ── Orbiting dots ──────────────────────────────────────── */
 .orbit-track {
   position: absolute; inset: 0;
   border-radius: 50%; pointer-events: none;
