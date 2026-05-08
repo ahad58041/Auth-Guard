@@ -58,7 +58,7 @@ Defenses to implement:
 1. **Account lockout** — lock after 5 failed attempts (stored in MongoDB, auto-unlock after 15 min)
 2. **bcrypt + salt** — upgrade from SHA-256 to bcrypt (already planned from Phase 1)
 3. **Rate limiting** — `express-rate-limit` middleware, 10 req/min per IP
-4. **CAPTCHA** — simple server-side math CAPTCHA on login form
+4. **CAPTCHA** — Google reCAPTCHA v2 ("I'm not a robot" checkbox) on the login form, verified server-side via Google's `siteverify` API
 
 **Status**: [ ] Not started
 
@@ -100,7 +100,7 @@ Is Lab proj/
 ## Key Rules for This Project
 - Never store plaintext passwords — always bcrypt + salt
 - The attack scripts target ONLY the local dev server (localhost)
-- CAPTCHA implementation: simple math CAPTCHA (no Google API dependency)
+- CAPTCHA: Google reCAPTCHA v2 — needs a site key + secret key from Google reCAPTCHA admin console
 - Test users: usernames like `alice`, `bob`, etc. with weak passwords (for demo purposes)
 - Keep attack script output clean: show attempt count, found password, time taken
 
