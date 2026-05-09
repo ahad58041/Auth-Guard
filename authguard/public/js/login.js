@@ -27,10 +27,12 @@ function showAlert(type, message) {
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const username = document.getElementById('username').value.trim();
-  const password = passEl.value;
+  const username       = document.getElementById('username').value.trim();
+  const password       = passEl.value;
+  const recaptchaToken = grecaptcha.getResponse();
 
   if (!username || !password) { showAlert('error', 'Please fill in all fields'); return; }
+  if (!recaptchaToken) { showAlert('error', 'Please complete the CAPTCHA'); return; }
 
   submitBtn.disabled = true;
   submitBtn.textContent = 'Signing in...';
@@ -40,7 +42,7 @@ form.addEventListener('submit', async (e) => {
     const res  = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, recaptchaToken }),
     });
     const data = await res.json();
 
@@ -49,9 +51,11 @@ form.addEventListener('submit', async (e) => {
       window.location.href = `/dashboard?name=${name}`;
     } else {
       showAlert('error', data.message);
+      grecaptcha.reset();
     }
   } catch {
     showAlert('error', 'Cannot reach server');
+    grecaptcha.reset();
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Sign In';

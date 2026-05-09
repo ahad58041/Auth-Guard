@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-[#0a0a14] min-h-screen flex overflow-hidden">
 
@@ -130,6 +131,13 @@
               </svg>
             </button>
           </div>
+        </div>
+
+        <!-- Defense 4: reCAPTCHA v2 widget -->
+        <div class="flex justify-center mb-5">
+          <div class="g-recaptcha"
+               data-sitekey="6LeWMuEsAAAAAC99gc2Ik9AS2fwVSYRRU1A8Tpeo"
+               data-theme="dark"></div>
         </div>
 
         <button type="submit" id="submitBtn"
