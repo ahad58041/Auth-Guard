@@ -1,0 +1,79 @@
+============================================================
+   IS SECURITY LAB — PHASE 4 COMPARISON REPORT
+   Online Brute-Force Attack: Before vs After Defenses
+============================================================
+  Generated : 2026-05-09 15:01:27
+  Target    : http://localhost:3000/api/login
+  Wordlist  : 129 passwords
+
+────────────────────────────────────────────────────────────
+  BEFORE DEFENSES — Phase 2 Baseline
+  (No account lockout, no rate limit, no CAPTCHA)
+────────────────────────────────────────────────────────────
+  Accounts targeted : 10
+  Accounts cracked  : 10/10  (100%)
+  Total attempts    : 127
+  Estimated time    : ~6.35s  (at 0.05s/req)
+  Attack outcome    : SUCCESSFUL — all accounts compromised
+
+  Per-account breakdown:
+    bob          | '123456        ' | attempt # 1 | CRACKED
+    eve          | 'password      ' | attempt # 2 | CRACKED
+    charlie      | 'qwerty        ' | attempt # 8 | CRACKED
+    frank        | 'abc123        ' | attempt # 9 | CRACKED
+    diana        | 'letmein       ' | attempt #13 | CRACKED
+    grace        | 'monkey        ' | attempt #15 | CRACKED
+    henry        | 'dragon        ' | attempt #16 | CRACKED
+    isabella     | 'master        ' | attempt #17 | CRACKED
+    alice        | 'password123   ' | attempt #22 | CRACKED
+    jack         | 'sunshine      ' | attempt #24 | CRACKED
+
+────────────────────────────────────────────────────────────
+  AFTER DEFENSES — Phase 3 (All 4 defenses active)
+  Defense 1: Account lockout after 5 failed attempts (15 min)
+  Defense 2: bcrypt + salt password hashing
+  Defense 3: Rate limiting — max 10 req/min per IP
+  Defense 4: Google reCAPTCHA v2 required on login
+────────────────────────────────────────────────────────────
+  Accounts targeted : 10
+  Accounts cracked  : 0/10
+  Total attempts    : 10
+  Time elapsed      : 0.05s
+  Attack outcome    : FAILED — defenses held
+
+  Per-account breakdown:
+    alice        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    bob          | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    charlie      | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    diana        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    eve          | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    frank        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    grace        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    henry        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    isabella     | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+    jack         | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+
+────────────────────────────────────────────────────────────
+  COMPARISON SUMMARY
+────────────────────────────────────────────────────────────
+  Metric                             Before      After
+  ────────────────────────────────────────────────
+  Accounts cracked                    10/10       0/10
+  Total requests sent                   127         10
+  Time to complete                   ~6.35s       0.1s
+  Attack success rate                  100%         0%
+
+  DEFENSE EFFECTIVENESS:
+    reCAPTCHA v2  blocked 10/10 accounts (100%)
+    Account lockout blocked  0/10 accounts (0%)
+    Rate limiting   blocked  0/10 accounts (0%)
+
+  CONCLUSION:
+    Without defenses: a simple dictionary attack cracked all 10 accounts
+    in just 127 requests using a 129-word list.
+    With all 4 defenses active, the attack was completely stopped.
+    The reCAPTCHA alone prevented the bot from even attempting passwords.
+    Account lockout and rate limiting provide additional layers that
+    stop any automated attack that somehow bypasses CAPTCHA.
+
+============================================================
