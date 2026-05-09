@@ -1,0 +1,59 @@
+======================================================
+       IS SECURITY LAB — BRUTE FORCE ATTACK REPORT
+======================================================
+  Date/Time      : 2026-05-09 14:20:24
+  Target URL     : http://localhost:3000/api/login
+  Users targeted : 10
+  Wordlist size  : 129 passwords
+  Total attempts : 127
+  Time elapsed   : 17.75s
+  Avg per user   : 1.78s
+
+------------------------------------------------------
+  CRACKED  : 10/10 accounts
+  BLOCKED  : 0/10 accounts
+  FAILED   : 0/10 accounts
+------------------------------------------------------
+
+  [CRACKED ACCOUNTS]
+    username : alice
+    password : password123
+    attempts : 22
+
+    username : bob
+    password : 123456
+    attempts : 1
+
+    username : charlie
+    password : qwerty
+    attempts : 8
+
+    username : diana
+    password : letmein
+    attempts : 13
+
+    username : eve
+    password : password
+    attempts : 2
+
+    username : frank
+    password : abc123
+    attempts : 9
+
+    username : grace
+    password : monkey
+    attempts : 15
+
+    username : henry
+    password : dragon
+    attempts : 16
+
+    username : isabella
+    password : master
+    attempts : 17
+
+    username : jack
+    password : sunshine
+    attempts : 24
+
+======================================================
