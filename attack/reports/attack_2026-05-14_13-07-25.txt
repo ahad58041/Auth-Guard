@@ -1,0 +1,31 @@
+========================================================
+     IS SECURITY LAB — BRUTE FORCE ATTACK REPORT
+========================================================
+  Date/Time      : 2026-05-14 13:07:25
+  Target URL     : http://localhost:3000/api/login
+  Users targeted : 10
+  Wordlist size  : 129 passwords
+  Total attempts : 10
+  Time elapsed   : 0.10s
+  Avg per user   : 0.01s
+
+--------------------------------------------------------
+  CRACKED        : 0/10 accounts
+  CAPTCHA BLOCK  : 10/10 accounts
+  LOCKOUT BLOCK  : 0/10 accounts
+  RATE LIM BLOCK : 0/10 accounts
+  NOT FOUND      : 0/10 accounts
+--------------------------------------------------------
+
+  alice        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  bob          | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  charlie      | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  diana        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  eve          | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  frank        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  grace        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  henry        | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  isabella     | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+  jack         | attempts:   1 | BLOCKED by CAPTCHA at attempt #1
+
+========================================================
